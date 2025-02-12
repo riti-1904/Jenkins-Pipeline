@@ -1,37 +1,54 @@
 pipeline {
     agent {
         docker {
-            image 'openjdk:11'
+            image 'openjdk:11' // Use OpenJDK 11 Docker image
         }
     }
-
     environment {
-        ENVIRONMENT = 'development' // Change to 'production' if needed
+        APP_ENV = "development"  // Change to "production" if needed
+        APP_VERSION = "1.0"
     }
-
     stages {
-        stage('Check Environment') {
+        stage('Environment Check') {
             steps {
                 script {
-                    if (env.ENVIRONMENT == 'production') {
-                        echo 'This is a Production Build'
+                    if (env.APP_ENV == 'production') {
+                        echo "Production build is running..."
                     } else {
-                        echo 'This is a Development Build'
+                        echo "Development build is running..."
                     }
                 }
             }
         }
-
+        
         stage('Parallel Execution') {
             parallel {
-                stage('Compile Task 1') {
+                stage('Task 1 - Compile Java Program') {
                     steps {
-                        sh 'javac Task1.java'
+                        script {
+                            writeFile file: 'Task1.java', text: '''
+                                public class Task1 {
+                                    public static void main(String[] args) {
+                                        System.out.println("Hello Jenkins from Task 1.");
+                                    }
+                                }
+                            '''
+                            sh 'javac Task1.java'
+                        }
                     }
                 }
-                stage('Compile Task 2') {
+                stage('Task 2 - Compile Java Program') {
                     steps {
-                        sh 'javac Task2.java'
+                        script {
+                            writeFile file: 'Task2.java', text: '''
+                                public class Task2 {
+                                    public static void main(String[] args) {
+                                        System.out.println("Hello Jenkins from Task 2.");
+                                    }
+                                }
+                            '''
+                            sh 'javac Task2.java'
+                        }
                     }
                 }
             }
@@ -39,11 +56,11 @@ pipeline {
 
         stage('Archive Artifacts') {
             steps {
-                archiveArtifacts artifacts: '**/*.class', fingerprint: true
+                archiveArtifacts artifacts: '*.class', fingerprint: true
             }
         }
 
-        stage('Cleanup Workspace') {
+        stage('Workspace Cleanup') {
             steps {
                 cleanWs()
             }
