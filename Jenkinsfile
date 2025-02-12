@@ -1,69 +1,50 @@
 pipeline {
     agent {
         docker {
-            image 'openjdk:11' // Use OpenJDK 11 Docker image
+            image 'openjdk:11'
+            args '--user root' // Ensures correct permissions
         }
     }
+
     environment {
-        APP_ENV = "development"  // Change to "production" if needed
-        APP_VERSION = "1.0"
+        JAVA_HOME = '/usr/local/openjdk-11'
     }
+
     stages {
-        stage('Environment Check') {
+        stage('Checkout Code') {
             steps {
                 script {
-                    if (env.APP_ENV == 'production') {
-                        echo "Production build is running..."
-                    } else {
-                        echo "Development build is running..."
-                    }
+                    checkout scm
                 }
             }
         }
-        
-        stage('Parallel Execution') {
-            parallel {
-                stage('Task 1 - Compile Java Program') {
-                    steps {
-                        script {
-                            writeFile file: 'Task1.java', text: '''
-                                public class Task1 {
-                                    public static void main(String[] args) {
-                                        System.out.println("Hello Jenkins from Task 1.");
-                                    }
-                                }
-                            '''
-                            sh 'javac Task1.java'
-                        }
-                    }
+
+        stage('Compile Java Program') {
+            steps {
+                script {
+                    sh 'javac HelloWorld.java'
                 }
-                stage('Task 2 - Compile Java Program') {
-                    steps {
-                        script {
-                            writeFile file: 'Task2.java', text: '''
-                                public class Task2 {
-                                    public static void main(String[] args) {
-                                        System.out.println("Hello Jenkins from Task 2.");
-                                    }
-                                }
-                            '''
-                            sh 'javac Task2.java'
-                        }
-                    }
+            }
+        }
+
+        stage('Run Java Program') {
+            steps {
+                script {
+                    sh 'java HelloWorld'
                 }
             }
         }
 
         stage('Archive Artifacts') {
             steps {
-                archiveArtifacts artifacts: '*.class', fingerprint: true
+                archiveArtifacts artifacts: '**/*.class', fingerprint: true
             }
         }
+    }
 
-        stage('Workspace Cleanup') {
-            steps {
-                cleanWs()
-            }
+    post {
+        always {
+            cleanWs() // Cleans workspace after execution
         }
     }
 }
